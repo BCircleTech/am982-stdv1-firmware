@@ -35,6 +35,6 @@ The structure of a complete frame transmitted between host and module is as foll
 |:---:|:---:|:---|
 |80 00|XX XX ... XX|Forward **Data** from the UM982.|
 |81 00|XX YY|Return data **YY** in the register **XX** of the MPU6050.|
-|01 02|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. ACX, ACY and ACZ represent the accelerations on X-axis, Y-axis and Z-axis. AVX, AVY and AVZ represents the angular velocities on X-axis, Y-axis and Z-axis.|
+|01 02|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. ACX, ACY and ACZ represent the accelerations on X-axis, Y-axis and Z-axis. AVX, AVY and AVZ represents the angular velocities on X-axis, Y-axis and Z-axis. Each value of accelerations and angular velocities is double with 8 bytes.|
 |8F 00||Command parsing succeed.|
 |8F 01||Command parsing Failed.|

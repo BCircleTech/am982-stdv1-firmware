@@ -22,7 +22,7 @@ The structure of a complete frame transmitted between host and module is as foll
 
 |Command|Data|Description|
 |:---:|:---:|:---|
-|00 00|XX XX ... XX|Forward **Data** to the UM982.|
+|00 00|XX XX ... XX|Forward **Data** to the COM1 of the UM982.|
 |00 01|Latitude Longitude Altitude|Set the module as an RTK base with the given latitude, longitude, and altitude. The type of latitude, longitude, and altitude is double with 8 bytes. **Data** is optional; if not given, the RTK base will initialize its position automatically within the first few minutes.|
 |00 02||Set the module as an RTK rover.|
 |01 00|XX|Read data from the register **XX** of the MPU6050.|
@@ -33,8 +33,22 @@ The structure of a complete frame transmitted between host and module is as foll
 
 |Command|Data|Description|
 |:---:|:---:|:---|
-|80 00|XX XX ... XX|Forward **Data** from the UM982.|
+|80 00|XX XX ... XX|Forward **Data** from the COM1 of the UM982.|
+|80 01|XX XX ... XX|Forward **Data** from the COM3 of the UM982.|
 |81 00|XX YY|Return data **YY** in the register **XX** of the MPU6050.|
 |81 02|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. ACX, ACY and ACZ represent the accelerations on X-axis, Y-axis and Z-axis. AVX, AVY and AVZ represents the angular velocities on X-axis, Y-axis and Z-axis. Each value of accelerations and angular velocities is double with 8 bytes.|
 |8F 00||Command parsing succeed.|
 |8F 01||Command parsing Failed.|
+
+## Request & Response Command
+
+|Request|Response|Description|
+|---|---|---|
+|00 00|80 00|Send to and receive from the COM1 of the UM982.|
+||80 01|Receive from the COM3 of the UM982.|
+|00 01|8F 00 *or* 8F 01|Set the module as an RTK base.|
+|00 02|8F 00 *or* 8F 01|Set the module as an RTK rover.|
+|01 00|81 00|Read data from the register of the MPU6050.|
+|01 01|8F 00 *or* 8F 01|Write data to the register of the MPU6050.|
+|01 02|8F 00 *or* 8F 01|Set the frequency of the IMU data.|
+||81 02|Receive from the IMU.|

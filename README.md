@@ -43,7 +43,7 @@ The structure of a complete frame transmitted between the host and the module is
 |8F 00||Command parsing succeed.|
 |8F 01||Command parsing Failed.|
 
-## Request & Response Command
+### Protocol Summary
 
 |Request|Response|Description|
 |---|---|---|
@@ -57,3 +57,54 @@ The structure of a complete frame transmitted between the host and the module is
 |01 01|8F 00 *or* 8F 01|Write data to the register of the MPU6050.|
 |01 02|8F 00 *or* 8F 01|Set the frequency of the IMU data.|
 ||81 03|Receive measurements from the IMU.|
+
+## RTK Initialization
+
+### Base
+
+Send the following strings to UM982 via COM1:
+
+```c
+/* Reset UM982. */
+uint8_t cmd_1[] = "freset\r\n";
+/* Automatically initialize position within 60 seconds. */
+uint8_t cmd_2[] = "mode base time 60\r\n";
+/* Send RTK base data via COM2. */
+uint8_t cmd_3[] = "rtcm1006 com2 10\r\n";
+uint8_t cmd_4[] = "rtcm1033 com2 10\r\n";
+uint8_t cmd_5[] = "rtcm1074 com2 1\r\n";
+uint8_t cmd_6[] = "rtcm1124 com2 1\r\n";
+uint8_t cmd_7[] = "rtcm1084 com2 1\r\n";
+uint8_t cmd_8[] = "rtcm1094 com2 1\r\n";
+```
+
+or
+
+```c
+/* Reset UM982. */
+uint8_t cmd_1[] = "freset\r\n";
+/* Set the latitude, longitude, and altitude if known. */
+uint8_t cmd_2[] = "mode base 40.078983248 116.236601977 60.42\r\n";
+/* Send RTK base data via COM2. */
+uint8_t cmd_3[] = "rtcm1006 com3 10\r\n";
+uint8_t cmd_4[] = "rtcm1033 com3 10\r\n";
+uint8_t cmd_5[] = "rtcm1074 com3 1\r\n";
+uint8_t cmd_6[] = "rtcm1124 com3 1\r\n";
+uint8_t cmd_7[] = "rtcm1084 com3 1\r\n";
+uint8_t cmd_8[] = "rtcm1094 com3 1\r\n";
+```
+
+### Rover
+
+Send the following strings to UM982 via COM1:
+
+```c
+/* Reset UM982. */
+uint8_t cmd_1[] = "freset\r\n";
+/* Set to rover. */
+uint8_t cmd_2[] = "mode rover\r\n";
+/* Receive latitude, longitude, and altitude message via COM3. */
+uint8_t cmd_3[] = "gpgga com3 1\r\n";
+/* Receive heading message via COM3. */
+uint8_t cmd_4[] = "gpths com3 1\r\n";
+```

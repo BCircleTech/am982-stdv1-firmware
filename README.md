@@ -29,7 +29,7 @@ The structure of a complete frame transmitted between the host and the module is
 |00 04||Get the RTK role.|
 |01 00|XX|Read data from the register **XX** of the MPU6050.|
 |01 01|XX YY|Write data **YY** to the register **XX** of the MPU6050.|
-|01 02|XX XX|Set the frequency of the IMU data. Options are 1Hz, 5Hz, 10Hz, 50Hz, 100Hz, 500Hz, 1000Hz.|
+|01 02|XX XX|Set the frequency of the IMU data. Options are 1Hz, 5Hz, 10Hz, 50Hz, 100Hz.|
 
 ### Module to Host
 

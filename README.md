@@ -24,18 +24,18 @@ The structure of a complete frame transmitted between the host and the module is
 |:---:|:---:|:---|
 |00 00|XX XX ... XX|Forward **Data** to the COM1 of the UM982.|
 |00 01|Latitude Longitude Altitude *or* Seconds|Set the module to RTK base with the given position or initial time. The types of position **Latitude**, **Longitude**, and **Altitude** are doubles, each with 8 bytes. The type of initial time **Seconds** is unsigned integer with 1 byte. If initial time was set, the RTK base will automatically initialize its position within the initial time.|
-|00 02|XX|Set the module to RTK rover with frequency options 1Hz, 5Hz, 10Hz.|
+|00 02|XX|Set the module to RTK rover with frequency unsigned integer **XX**. Options are 1Hz, 5Hz, 10Hz.|
 |00 03||Get the RTK role.|
 |01 00|XX|Read data from the register **XX** of the MPU6050.|
 |01 01|XX YY|Write data **YY** to the register **XX** of the MPU6050.|
-|01 02|XX XX|Set the frequency of the IMU data. Options are 1Hz, 5Hz, 10Hz, 50Hz, 100Hz.|
+|01 02|XX|Set the frequency unsigned integer **XX** of the IMU data. Options are 1Hz, 5Hz, 10Hz, 50Hz, 100Hz.|
 
 ### Module to Host
 
 |Command|Data|Description|
 |:---:|:---:|:---|
 |80 00|XX XX ... XX|Forward **Data** from the COM1 of the UM982.|
-|80 03||Return the RTK role. 0 for base and 1 for rover.|
+|80 03|XX|Return the RTK role unsigned integer *XX*. 0 for base and 1 for rover.|
 |80 04|XX XX ... XX|Forward **Data** from the COM3 of the UM982, if the module is set to RTK rover.|
 |81 00|XX YY|Return data **YY** in the register **XX** of the MPU6050.|
 |81 03|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. ACX, ACY, and ACZ represent the accelerations along the X-axis, Y-axis, and Z-axis, respectively. AVX, AVY, and AVZ represent the angular velocities along the X-axis, Y-axis, and Z-axis, respectively. Each value of acceleration and angular velocity is a double, with 8 bytes.|

@@ -23,7 +23,7 @@ The structure of a complete frame transmitted between the host and the module is
 |Command|Data|Description|
 |:---:|:---:|:---|
 |00 00|XX XX ... XX|Forward **Data** to the COM1 of the UM982.|
-|00 01|Latitude Longitude Altitude|Set the module to RTK base with the given latitude, longitude, and altitude. The types of latitude, longitude, and altitude are doubles, each with 8 bytes. **Data** is optional and, if not provided, the RTK base will automatically initialize its position within the first few minutes.|
+|00 01|Latitude Longitude Altitude *or* Seconds|Set the module to RTK base with the given position or initial time. The types of position **Latitude**, **Longitude**, and **Altitude** are doubles, each with 8 bytes. The type of initial time **Seconds** is unsigned integer with 1 byte. If initial time was set, the RTK base will automatically initialize its position within the initial time.|
 |00 02|XX|Set the module to RTK rover with frequency options 1Hz, 5Hz, 10Hz.|
 |00 03||Get the RTK role.|
 |01 00|XX|Read data from the register **XX** of the MPU6050.|

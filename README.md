@@ -35,10 +35,10 @@ The structure of a complete frame transmitted between the host and the module is
 |Command|Data|Description|
 |:---:|:---:|:---|
 |80 00|XX XX ... XX|Forward **Data** from the COM1 of the UM982.|
-|80 03|XX|Return the RTK role unsigned integer *XX*. 0 for base and 1 for rover.|
+|80 03|XX|Return the RTK role unsigned integer **XX**. 0 for base and 1 for rover.|
 |80 04|XX XX ... XX|Forward **Data** from the COM3 of the UM982, if the module is set to RTK rover.|
 |81 00|XX YY|Return data **YY** in the register **XX** of the MPU6050.|
-|81 03|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. ACX, ACY, and ACZ represent the accelerations along the X-axis, Y-axis, and Z-axis, respectively. AVX, AVY, and AVZ represent the angular velocities along the X-axis, Y-axis, and Z-axis, respectively. Each value of acceleration and angular velocity is a double, with 8 bytes.|
+|81 03|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. **ACX**, **ACY**, and **ACZ** represent the accelerations along the X-axis, Y-axis, and Z-axis, respectively. **AVX**, **AVY**, and **AVZ** represent the angular velocities along the X-axis, Y-axis, and Z-axis, respectively. Each value of acceleration and angular velocity is a double, with 8 bytes.|
 |8F 00||Command parsing succeed.|
 |8F 01||Command parsing Failed.|
 

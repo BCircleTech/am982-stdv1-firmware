@@ -2,6 +2,8 @@
 #define AM982STDV1_H
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "main.h"
 #include "cmsis_os.h"
@@ -27,6 +29,7 @@ void ResetRTK();
 void SetRTKBaseWithPosition(double latitude, double longitude, double altitude);
 void SetRTKBaseWithTime(unsigned int seconds);
 void SetRTKRover(unsigned int freq);
+void SetRTKConf(uint8_t *cmd, uint16_t size);
 
 void ResetIMU();
 

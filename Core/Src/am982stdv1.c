@@ -154,6 +154,16 @@ void SetRTKRover(unsigned int freq)
     HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_4, sizeof(cmd_4) - 1);
 }
 
+void SetRTKConf(uint8_t *cmd, uint16_t size)
+{
+    uint8_t *tmp = malloc(size + 2);
+    memcpy(tmp, cmd, size);
+    tmp[size] = '\r';
+    tmp[size + 1] = '\n';
+    HAL_UART_Transmit_DMA(rtkCOM1Ptr, tmp, size + 2);
+    free(tmp);
+}
+
 void ResetIMU()
 {
     HAL_GPIO_WritePin(IMU_RST_GPIO_Port, IMU_RST_Pin, GPIO_PIN_SET);

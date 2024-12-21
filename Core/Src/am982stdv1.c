@@ -170,3 +170,22 @@ void ResetIMU()
     osDelay(2000);
     HAL_GPIO_WritePin(IMU_RST_GPIO_Port, IMU_RST_Pin, GPIO_PIN_RESET);
 }
+
+void InitIMU()
+{
+}
+
+void ReadIMUReg(uint8_t addr, uint8_t *data)
+{
+    HAL_I2C_Master_Transmit(&hi2c5, IMU_I2C_ADDR, &addr, 1, IMU_I2C_TIMEOUT);
+    HAL_I2C_Master_Receive(&hi2c5, IMU_I2C_ADDR, data, 1, IMU_I2C_TIMEOUT);
+}
+
+void WriteIMUReg(uint8_t addr, uint8_t *data)
+{
+    uint8_t *tmp = malloc(2);
+    tmp[0] = addr;
+    tmp[1] = *data;
+    HAL_I2C_Master_Transmit(&hi2c5, IMU_I2C_ADDR, tmp, 2, IMU_I2C_TIMEOUT);
+    free(tmp);
+}

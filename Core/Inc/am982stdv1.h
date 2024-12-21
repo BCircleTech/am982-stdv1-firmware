@@ -16,6 +16,9 @@
 #include "usb_device.h"
 #include "gpio.h"
 
+#define IMU_I2C_ADDR 0xd0
+#define IMU_I2C_TIMEOUT 10
+
 extern UART_HandleTypeDef *rtkCOM1Ptr;
 extern UART_HandleTypeDef *rtkCOM3Ptr;
 extern UART_HandleTypeDef *boardUARTPtr;
@@ -32,5 +35,8 @@ void SetRTKRover(unsigned int freq);
 void SetRTKConf(uint8_t *cmd, uint16_t size);
 
 void ResetIMU();
+void InitIMU();
+void ReadIMUReg(uint8_t addr, uint8_t *data);
+void WriteIMUReg(uint8_t addr, uint8_t *data);
 
 #endif

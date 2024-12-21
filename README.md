@@ -49,7 +49,7 @@ The structure of a complete frame transmitted between the host and the module is
 |00 00|80 00|Send to and receive from the COM1 of the UM982.|
 |00 01|8F 00 *or* 8F 01|Set the module as an RTK base.|
 |00 02|8F 00 *or* 8F 01|Set the module as an RTK rover with frequency.|
-|00 03|80 04|Get the RTK role.|
+|00 03|80 03|Get the RTK role.|
 ||80 04|Receive from the COM3 of the UM982, if the module is set to RTK rover.|
 |01 00|81 00|Read data from the register of the MPU6050.|
 |01 01|8F 00 *or* 8F 01|Write data to the register of the MPU6050.|

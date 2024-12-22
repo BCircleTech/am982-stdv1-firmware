@@ -372,8 +372,9 @@ extern UART_HandleTypeDef *rtkCOM3Ptr;
 extern UART_HandleTypeDef *boardUARTPtr;
 extern I2C_HandleTypeDef *imuI2CPtr;
 
-extern float imuAccelerationResolution;
-extern float imuGyroscopeResolution;
+extern float imuAccelSensitivity;
+extern float imuGyroSensitivity;
+extern float gravity;
 extern unsigned int imuAccelFs;
 extern unsigned int imuGyroFs;
 
@@ -395,5 +396,8 @@ void WriteIMURegBits(uint8_t addr, uint16_t start, uint16_t len, uint8_t data);
 void InitIMU(uint8_t clkSource, uint8_t accelRange, uint8_t gyroRange);
 void SetIMUDigitalLowPassFilter(uint8_t bandwidth);
 void SetIMUSampleRate(unsigned int rate);
+void GetIMUAccel(float accel[3]);
+void GetIMUGyro(float gyro[3]);
+void GetIMUTemp(float *temp);
 
 #endif

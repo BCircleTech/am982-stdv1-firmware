@@ -5,8 +5,9 @@ UART_HandleTypeDef *rtkCOM3Ptr = &huart2;
 UART_HandleTypeDef *boardUARTPtr = &huart4;
 I2C_HandleTypeDef *imuI2CPtr = &hi2c5;
 
-float imuAccelerationResolution = 0;
-float imuGyroscopeResolution = 0;
+float imuAccelSensitivity = 0;
+float imuGyroSensitivity = 0;
+float gravity = 9.80665;
 unsigned int imuAccelFs = 1000;
 unsigned int imuGyroFs = 1000;
 
@@ -242,40 +243,40 @@ void InitIMU(uint8_t clkSource, uint8_t accelRange, uint8_t gyroRange)
     switch (accelRange)
     {
     case MPU6050_ACCEL_FS_2:
-        imuAccelerationResolution = 2.0 / 16384.0;
+        imuAccelSensitivity = 16384.0;
         break;
     case MPU6050_ACCEL_FS_4:
-        imuAccelerationResolution = 4.0 / 16384.0;
+        imuAccelSensitivity = 8192.0;
         break;
     case MPU6050_ACCEL_FS_8:
-        imuAccelerationResolution = 8.0 / 16384.0;
+        imuAccelSensitivity = 4096.0;
         break;
     case MPU6050_ACCEL_FS_16:
-        imuAccelerationResolution = 16.0 / 16384.0;
+        imuAccelSensitivity = 2048.0;
         break;
     default:
         accelRange = MPU6050_ACCEL_FS_16;
-        imuAccelerationResolution = 16.0 / 16384.0;
+        imuAccelSensitivity = 2048.0;
     }
     WriteIMURegBits(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, accelRange);
     // set full scale gyro range
     switch (gyroRange)
     {
     case MPU6050_GYRO_FS_250:
-        imuGyroscopeResolution = 250.0 / 16384.0;
+        imuGyroSensitivity = 131.0;
         break;
     case MPU6050_GYRO_FS_500:
-        imuGyroscopeResolution = 500.0 / 16384.0;
+        imuGyroSensitivity = 65.5;
         break;
     case MPU6050_GYRO_FS_1000:
-        imuGyroscopeResolution = 1000.0 / 16384.0;
+        imuGyroSensitivity = 32.8;
         break;
     case MPU6050_GYRO_FS_2000:
-        imuGyroscopeResolution = 2000.0 / 16384.0;
+        imuGyroSensitivity = 16.4;
         break;
     default:
         gyroRange = MPU6050_GYRO_FS_2000;
-        imuGyroscopeResolution = 2000.0 / 16384.0;
+        imuGyroSensitivity = 16.4;
     }
     WriteIMURegBits(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, gyroRange);
     // set sleep enabled
@@ -316,4 +317,50 @@ void SetIMUSampleRate(unsigned int rate)
 {
     uint8_t div = (imuGyroFs / rate) - 1;
     WriteIMUReg(MPU6050_RA_SMPLRT_DIV, div);
+}
+
+void GetIMUAccel(float accel[3])
+{
+    uint8_t axl, axh, ayl, ayh, azl, azh;
+    int16_t ax, ay, az;
+    ReadIMUReg(MPU6050_RA_ACCEL_XOUT_L, &axl);
+    ReadIMUReg(MPU6050_RA_ACCEL_XOUT_H, &axh);
+    ReadIMUReg(MPU6050_RA_ACCEL_YOUT_L, &ayl);
+    ReadIMUReg(MPU6050_RA_ACCEL_YOUT_H, &ayh);
+    ReadIMUReg(MPU6050_RA_ACCEL_ZOUT_L, &azl);
+    ReadIMUReg(MPU6050_RA_ACCEL_ZOUT_H, &azh);
+    ax = axh << 8 | axl;
+    ay = ayh << 8 | ayl;
+    az = azh << 8 | azl;
+    accel[0] = ax / imuAccelSensitivity * gravity;
+    accel[1] = ay / imuAccelSensitivity * gravity;
+    accel[2] = az / imuAccelSensitivity * gravity;
+}
+
+void GetIMUGyro(float gyro[3])
+{
+    uint8_t gxl, gxh, gyl, gyh, gzl, gzh;
+    int16_t gx, gy, gz;
+    ReadIMUReg(MPU6050_RA_GYRO_XOUT_L, &gxl);
+    ReadIMUReg(MPU6050_RA_GYRO_XOUT_H, &gxh);
+    ReadIMUReg(MPU6050_RA_GYRO_YOUT_L, &gyl);
+    ReadIMUReg(MPU6050_RA_GYRO_YOUT_H, &gyh);
+    ReadIMUReg(MPU6050_RA_GYRO_ZOUT_L, &gzl);
+    ReadIMUReg(MPU6050_RA_GYRO_ZOUT_H, &gzh);
+    gx = gxh << 8 | gxl;
+    gy = gyh << 8 | gyl;
+    gz = gzh << 8 | gzl;
+    gyro[0] = gx / imuGyroSensitivity;
+    gyro[1] = gy / imuGyroSensitivity;
+    gyro[2] = gz / imuGyroSensitivity;
+}
+
+void GetIMUTemp(float *temp)
+{
+    uint8_t tl, th;
+    int16_t t;
+    ReadIMUReg(MPU6050_RA_TEMP_OUT_L, &tl);
+    ReadIMUReg(MPU6050_RA_TEMP_OUT_H, &th);
+    t = th << 8 | tl;
+    *temp = (t - 521) / 340.0 + 36.53;
 }

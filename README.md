@@ -109,3 +109,18 @@ uint8_t cmd_3[] = "gpths com3 1\r\n";
 /* Save */
 uint8_t cmd_4[] = "saveconfig\r\n";
 ```
+
+## IMU Initialization
+
+```c
+/* Set accel range to 2g */
+WriteIMUReg(MPU6050_RA_ACCEL_CONFIG, 0x00);
+/* Set gyro range to 250 degree/s */
+WriteIMUReg(MPU6050_RA_GYRO_CONFIG, 0x00);
+/* Set digital low pass filter to 5Hz */
+WriteIMUReg(MPU6050_RA_CONFIG, 0x06);
+/* Set sample rate to 100Hz */
+WriteIMUReg(MPU6050_RA_SMPLRT_DIV, 0x09);
+/* Init IMU */
+WriteIMUReg(MPU6050_RA_PWR_MGMT_1, 0x01);
+```

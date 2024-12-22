@@ -3,6 +3,12 @@
 UART_HandleTypeDef *rtkCOM1Ptr = &huart9;
 UART_HandleTypeDef *rtkCOM3Ptr = &huart2;
 UART_HandleTypeDef *boardUARTPtr = &huart4;
+I2C_HandleTypeDef *imuI2CPtr = &hi2c5;
+
+float imuAccelerationResolution = 0;
+float imuGyroscopeResolution = 0;
+unsigned int imuAccelFs = 1000;
+unsigned int imuGyroFs = 1000;
 
 void LedRunOn()
 {
@@ -31,129 +37,6 @@ void ResetRTK()
     HAL_GPIO_WritePin(RTK_NRST_GPIO_Port, RTK_NRST_Pin, GPIO_PIN_SET);
 }
 
-void SetRTKBaseWithPosition(double latitude, double longitude, double altitude)
-{
-    uint8_t cmd_0[] = "freset\r\n";
-    uint8_t cmd_1[128] = {0};
-    uint8_t cmd_2[] = "rtcm1006 com2 10\r\n";
-    uint8_t cmd_3[] = "rtcm1033 com2 10\r\n";
-    uint8_t cmd_4[] = "rtcm1074 com2 1\r\n";
-    uint8_t cmd_5[] = "rtcm1124 com2 1\r\n";
-    uint8_t cmd_6[] = "rtcm1084 com2 1\r\n";
-    uint8_t cmd_7[] = "rtcm1094 com2 1\r\n";
-    uint8_t cmd_8[] = "saveconfig\r\n";
-    int cmd_1_len = snprintf((char *)cmd_1, sizeof(cmd_1), "mode base %.9f %.9f %.2f\r\n", latitude, longitude, altitude);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_0, sizeof(cmd_0) - 1);
-    osDelay(10000);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_1, cmd_1_len);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2, sizeof(cmd_2) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3, sizeof(cmd_3) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_4, sizeof(cmd_4) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_5, sizeof(cmd_5) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_6, sizeof(cmd_6) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_7, sizeof(cmd_7) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_8, sizeof(cmd_8) - 1);
-}
-
-void SetRTKBaseWithTime(unsigned int seconds)
-{
-    uint8_t cmd_0[] = "freset\r\n";
-    uint8_t cmd_1[128] = {0};
-    uint8_t cmd_2[] = "rtcm1006 com2 10\r\n";
-    uint8_t cmd_3[] = "rtcm1033 com2 10\r\n";
-    uint8_t cmd_4[] = "rtcm1074 com2 1\r\n";
-    uint8_t cmd_5[] = "rtcm1124 com2 1\r\n";
-    uint8_t cmd_6[] = "rtcm1084 com2 1\r\n";
-    uint8_t cmd_7[] = "rtcm1094 com2 1\r\n";
-    uint8_t cmd_8[] = "saveconfig\r\n";
-    int cmd_1_len = snprintf((char *)cmd_1, sizeof(cmd_1), "mode base time %d\r\n", seconds);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_0, sizeof(cmd_0) - 1);
-    osDelay(10000);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_1, cmd_1_len);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2, sizeof(cmd_2) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3, sizeof(cmd_3) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_4, sizeof(cmd_4) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_5, sizeof(cmd_5) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_6, sizeof(cmd_6) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_7, sizeof(cmd_7) - 1);
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_8, sizeof(cmd_8) - 1);
-}
-
-void SetRTKRover(unsigned int freq)
-{
-    uint8_t cmd_0[] = "freset\r\n";
-    uint8_t cmd_1[] = "mode rover\r\n";
-    uint8_t cmd_2_1hz[] = "gpgga com3 1\r\n";
-    uint8_t cmd_2_2hz[] = "gpgga com3 0.5\r\n";
-    uint8_t cmd_2_5hz[] = "gpgga com3 0.2\r\n";
-    uint8_t cmd_2_10hz[] = "gpgga com3 0.1\r\n";
-    uint8_t cmd_2_20hz[] = "gpgga com3 0.05\r\n";
-    uint8_t cmd_2_50hz[] = "gpgga com3 0.02\r\n";
-    uint8_t cmd_3_1hz[] = "gpths com3 1\r\n";
-    uint8_t cmd_3_2hz[] = "gpths com3 0.5\r\n";
-    uint8_t cmd_3_5hz[] = "gpths com3 0.2\r\n";
-    uint8_t cmd_3_10hz[] = "gpths com3 0.1\r\n";
-    uint8_t cmd_3_20hz[] = "gpths com3 0.05\r\n";
-    uint8_t cmd_3_50hz[] = "gpths com3 0.02\r\n";
-    uint8_t cmd_4[] = "saveconfig\r\n";
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_0, sizeof(cmd_0) - 1);
-    osDelay(10000);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_1, sizeof(cmd_1) - 1);
-    osDelay(100);
-    switch (freq)
-    {
-    case 1:
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2_1hz, sizeof(cmd_2_1hz) - 1);
-        osDelay(100);
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3_1hz, sizeof(cmd_3_1hz) - 1);
-        break;
-    case 2:
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2_2hz, sizeof(cmd_2_2hz) - 1);
-        osDelay(100);
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3_2hz, sizeof(cmd_3_2hz) - 1);
-        break;
-    case 5:
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2_5hz, sizeof(cmd_2_5hz) - 1);
-        osDelay(100);
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3_5hz, sizeof(cmd_3_5hz) - 1);
-        break;
-    case 10:
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2_10hz, sizeof(cmd_2_10hz) - 1);
-        osDelay(100);
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3_10hz, sizeof(cmd_3_10hz) - 1);
-        break;
-    case 20:
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2_20hz, sizeof(cmd_2_20hz) - 1);
-        osDelay(100);
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3_20hz, sizeof(cmd_3_20hz) - 1);
-        break;
-    case 50:
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_2_50hz, sizeof(cmd_2_50hz) - 1);
-        osDelay(100);
-        HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_3_50hz, sizeof(cmd_3_50hz) - 1);
-        break;
-
-    default:
-        break;
-    }
-    osDelay(100);
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_4, sizeof(cmd_4) - 1);
-}
-
 void SetRTKConf(uint8_t *cmd, uint16_t size)
 {
     uint8_t *tmp = malloc(size + 2);
@@ -164,6 +47,140 @@ void SetRTKConf(uint8_t *cmd, uint16_t size)
     free(tmp);
 }
 
+void SetRTKBaseWithPosition(double latitude, double longitude, double altitude)
+{
+    uint8_t cmd_0[] = "freset";
+    uint8_t cmd_1[128] = {0};
+    uint8_t cmd_2[] = "rtcm1006 com2 10";
+    uint8_t cmd_3[] = "rtcm1033 com2 10";
+    uint8_t cmd_4[] = "rtcm1074 com2 1";
+    uint8_t cmd_5[] = "rtcm1124 com2 1";
+    uint8_t cmd_6[] = "rtcm1084 com2 1";
+    uint8_t cmd_7[] = "rtcm1094 com2 1";
+    uint8_t cmd_8[] = "saveconfig";
+    int cmd_1_len = snprintf((char *)cmd_1, sizeof(cmd_1), "mode base %.9f %.9f %.2f", latitude, longitude, altitude);
+    SetRTKConf(cmd_0, sizeof(cmd_0) - 1);
+    osDelay(10000);
+    SetRTKConf(cmd_1, cmd_1_len);
+    osDelay(100);
+    SetRTKConf(cmd_2, sizeof(cmd_2) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_3, sizeof(cmd_3) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_4, sizeof(cmd_4) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_5, sizeof(cmd_5) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_6, sizeof(cmd_6) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_7, sizeof(cmd_7) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_8, sizeof(cmd_8) - 1);
+}
+
+void SetRTKBaseWithTime(unsigned int seconds)
+{
+    uint8_t cmd_0[] = "freset";
+    uint8_t cmd_1[128] = {0};
+    uint8_t cmd_2[] = "rtcm1006 com2 10";
+    uint8_t cmd_3[] = "rtcm1033 com2 10";
+    uint8_t cmd_4[] = "rtcm1074 com2 1";
+    uint8_t cmd_5[] = "rtcm1124 com2 1";
+    uint8_t cmd_6[] = "rtcm1084 com2 1";
+    uint8_t cmd_7[] = "rtcm1094 com2 1";
+    uint8_t cmd_8[] = "saveconfig";
+    int cmd_1_len = snprintf((char *)cmd_1, sizeof(cmd_1), "mode base time %d", seconds);
+    SetRTKConf(cmd_0, sizeof(cmd_0) - 1);
+    osDelay(10000);
+    SetRTKConf(cmd_1, cmd_1_len);
+    osDelay(100);
+    SetRTKConf(cmd_2, sizeof(cmd_2) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_3, sizeof(cmd_3) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_4, sizeof(cmd_4) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_5, sizeof(cmd_5) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_6, sizeof(cmd_6) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_7, sizeof(cmd_7) - 1);
+    osDelay(100);
+    SetRTKConf(cmd_8, sizeof(cmd_8) - 1);
+}
+
+/*
+freq:
+    RTK_ROVER_FREQ_1HZ
+    RTK_ROVER_FREQ_2HZ
+    RTK_ROVER_FREQ_5HZ
+    RTK_ROVER_FREQ_10HZ
+    RTK_ROVER_FREQ_20HZ
+    RTK_ROVER_FREQ_50HZ
+*/
+void SetRTKRover(unsigned int freq)
+{
+    uint8_t cmd_0[] = "freset";
+    uint8_t cmd_1[] = "mode rover";
+    uint8_t cmd_2_1hz[] = "gpgga com3 1";
+    uint8_t cmd_2_2hz[] = "gpgga com3 0.5";
+    uint8_t cmd_2_5hz[] = "gpgga com3 0.2";
+    uint8_t cmd_2_10hz[] = "gpgga com3 0.1";
+    uint8_t cmd_2_20hz[] = "gpgga com3 0.05";
+    uint8_t cmd_2_50hz[] = "gpgga com3 0.02";
+    uint8_t cmd_3_1hz[] = "gpths com3 1";
+    uint8_t cmd_3_2hz[] = "gpths com3 0.5";
+    uint8_t cmd_3_5hz[] = "gpths com3 0.2";
+    uint8_t cmd_3_10hz[] = "gpths com3 0.1";
+    uint8_t cmd_3_20hz[] = "gpths com3 0.05";
+    uint8_t cmd_3_50hz[] = "gpths com3 0.02";
+    uint8_t cmd_4[] = "saveconfig";
+    SetRTKConf(cmd_0, sizeof(cmd_0) - 1);
+    osDelay(10000);
+    SetRTKConf(cmd_1, sizeof(cmd_1) - 1);
+    osDelay(100);
+    switch (freq)
+    {
+    case RTK_ROVER_FREQ_1HZ:
+        SetRTKConf(cmd_2_1hz, sizeof(cmd_2_1hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_1hz, sizeof(cmd_3_1hz) - 1);
+        break;
+    case RTK_ROVER_FREQ_2HZ:
+        SetRTKConf(cmd_2_2hz, sizeof(cmd_2_2hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_2hz, sizeof(cmd_3_2hz) - 1);
+        break;
+    case RTK_ROVER_FREQ_5HZ:
+        SetRTKConf(cmd_2_5hz, sizeof(cmd_2_5hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_5hz, sizeof(cmd_3_5hz) - 1);
+        break;
+    case RTK_ROVER_FREQ_10HZ:
+        SetRTKConf(cmd_2_10hz, sizeof(cmd_2_10hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_10hz, sizeof(cmd_3_10hz) - 1);
+        break;
+    case RTK_ROVER_FREQ_20HZ:
+        SetRTKConf(cmd_2_20hz, sizeof(cmd_2_20hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_20hz, sizeof(cmd_3_20hz) - 1);
+        break;
+    case RTK_ROVER_FREQ_50HZ:
+        SetRTKConf(cmd_2_50hz, sizeof(cmd_2_50hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_50hz, sizeof(cmd_3_50hz) - 1);
+        break;
+    default:
+        SetRTKConf(cmd_2_1hz, sizeof(cmd_2_1hz) - 1);
+        osDelay(100);
+        SetRTKConf(cmd_3_1hz, sizeof(cmd_3_1hz) - 1);
+        break;
+    }
+    osDelay(100);
+    SetRTKConf(cmd_4, sizeof(cmd_4) - 1);
+}
+
 void ResetIMU()
 {
     HAL_GPIO_WritePin(IMU_RST_GPIO_Port, IMU_RST_Pin, GPIO_PIN_SET);
@@ -171,21 +188,132 @@ void ResetIMU()
     HAL_GPIO_WritePin(IMU_RST_GPIO_Port, IMU_RST_Pin, GPIO_PIN_RESET);
 }
 
-void InitIMU()
-{
-}
-
 void ReadIMUReg(uint8_t addr, uint8_t *data)
 {
-    HAL_I2C_Master_Transmit(&hi2c5, IMU_I2C_ADDR, &addr, 1, IMU_I2C_TIMEOUT);
-    HAL_I2C_Master_Receive(&hi2c5, IMU_I2C_ADDR, data, 1, IMU_I2C_TIMEOUT);
+    HAL_I2C_Master_Transmit(imuI2CPtr, IMU_I2C_ADDR, &addr, 1, IMU_I2C_TIMEOUT);
+    HAL_I2C_Master_Receive(imuI2CPtr, IMU_I2C_ADDR, data, 1, IMU_I2C_TIMEOUT);
 }
 
-void WriteIMUReg(uint8_t addr, uint8_t *data)
+void WriteIMUReg(uint8_t addr, uint8_t data)
 {
     uint8_t *tmp = malloc(2);
     tmp[0] = addr;
-    tmp[1] = *data;
-    HAL_I2C_Master_Transmit(&hi2c5, IMU_I2C_ADDR, tmp, 2, IMU_I2C_TIMEOUT);
+    tmp[1] = data;
+    HAL_I2C_Master_Transmit(imuI2CPtr, IMU_I2C_ADDR, tmp, 2, IMU_I2C_TIMEOUT);
     free(tmp);
+}
+
+void WriteIMURegBits(uint8_t addr, uint16_t start, uint16_t len, uint8_t data)
+{
+    uint8_t tmp, mask;
+    ReadIMUReg(addr, &tmp);
+    mask = ((1 << len) - 1) << (start - len + 1);
+    data <<= (start - len + 1);
+    data &= mask;
+    tmp &= ~(mask);
+    tmp |= data;
+    WriteIMUReg(addr, tmp);
+}
+/*
+clkSource:
+    MPU6050_CLOCK_INTERNAL
+    MPU6050_CLOCK_PLL_XGYRO
+    MPU6050_CLOCK_PLL_YGYRO
+    MPU6050_CLOCK_PLL_ZGYRO
+    MPU6050_CLOCK_PLL_EXT32K
+    MPU6050_CLOCK_PLL_EXT19M
+    MPU6050_CLOCK_KEEP_RESET
+accelRange:
+    MPU6050_ACCEL_FS_2
+    MPU6050_ACCEL_FS_4
+    MPU6050_ACCEL_FS_8
+    MPU6050_ACCEL_FS_16
+gyroRange:
+    MPU6050_GYRO_FS_250
+    MPU6050_GYRO_FS_500
+    MPU6050_GYRO_FS_1000
+    MPU6050_GYRO_FS_2000
+*/
+void InitIMU(uint8_t clkSource, uint8_t accelRange, uint8_t gyroRange)
+{
+    // set clock source
+    WriteIMURegBits(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CLKSEL_BIT, MPU6050_PWR1_CLKSEL_LENGTH, clkSource);
+    // set full scale accel range
+    switch (accelRange)
+    {
+    case MPU6050_ACCEL_FS_2:
+        imuAccelerationResolution = 2.0 / 16384.0;
+        break;
+    case MPU6050_ACCEL_FS_4:
+        imuAccelerationResolution = 4.0 / 16384.0;
+        break;
+    case MPU6050_ACCEL_FS_8:
+        imuAccelerationResolution = 8.0 / 16384.0;
+        break;
+    case MPU6050_ACCEL_FS_16:
+        imuAccelerationResolution = 16.0 / 16384.0;
+        break;
+    default:
+        accelRange = MPU6050_ACCEL_FS_16;
+        imuAccelerationResolution = 16.0 / 16384.0;
+    }
+    WriteIMURegBits(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, accelRange);
+    // set full scale gyro range
+    switch (gyroRange)
+    {
+    case MPU6050_GYRO_FS_250:
+        imuGyroscopeResolution = 250.0 / 16384.0;
+        break;
+    case MPU6050_GYRO_FS_500:
+        imuGyroscopeResolution = 500.0 / 16384.0;
+        break;
+    case MPU6050_GYRO_FS_1000:
+        imuGyroscopeResolution = 1000.0 / 16384.0;
+        break;
+    case MPU6050_GYRO_FS_2000:
+        imuGyroscopeResolution = 2000.0 / 16384.0;
+        break;
+    default:
+        gyroRange = MPU6050_GYRO_FS_2000;
+        imuGyroscopeResolution = 2000.0 / 16384.0;
+    }
+    WriteIMURegBits(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, gyroRange);
+    // set sleep enabled
+    WriteIMURegBits(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 1, 0);
+}
+
+/*
+bandwidth:
+    MPU6050_DLPF_BW_256
+    MPU6050_DLPF_BW_188
+    MPU6050_DLPF_BW_98
+    MPU6050_DLPF_BW_42
+    MPU6050_DLPF_BW_20
+    MPU6050_DLPF_BW_10
+    MPU6050_DLPF_BW_5
+*/
+void SetIMUDigitalLowPassFilter(uint8_t bandwidth)
+{
+    switch (bandwidth)
+    {
+    case MPU6050_DLPF_BW_5:
+    case MPU6050_DLPF_BW_10:
+    case MPU6050_DLPF_BW_20:
+    case MPU6050_DLPF_BW_42:
+    case MPU6050_DLPF_BW_98:
+    case MPU6050_DLPF_BW_188:
+        break;
+    case MPU6050_DLPF_BW_256:
+        imuGyroFs = 8000;
+        break;
+    default:
+        imuGyroFs = 8000;
+    }
+    WriteIMURegBits(MPU6050_RA_CONFIG, MPU6050_CFG_DLPF_CFG_BIT, MPU6050_CFG_DLPF_CFG_LENGTH, bandwidth);
+}
+
+void SetIMUSampleRate(unsigned int rate)
+{
+    uint8_t div = (imuGyroFs / rate) - 1;
+    WriteIMUReg(MPU6050_RA_SMPLRT_DIV, div);
 }

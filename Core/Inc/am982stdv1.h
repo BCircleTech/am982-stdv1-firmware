@@ -372,12 +372,6 @@ extern UART_HandleTypeDef *rtkCOM3Ptr;
 extern UART_HandleTypeDef *boardUARTPtr;
 extern I2C_HandleTypeDef *imuI2CPtr;
 
-extern float imuAccelSensitivity;
-extern float imuGyroSensitivity;
-extern float gravity;
-extern unsigned int imuAccelFs;
-extern unsigned int imuGyroFs;
-
 void LedRunOn();
 void LedRunOff();
 void LedErrOn();

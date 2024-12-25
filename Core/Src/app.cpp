@@ -1,6 +1,10 @@
+#include "protocol.h"
+
+extern "C"
+{
 #include "am982stdv1.h"
-#include "usbd_cdc_if.h"
 #include "message_buffer.h"
+#include "usbd_cdc_if.h"
 
 uint8_t rtkCOM1RxBuff[512];
 uint8_t rtkCOM3RxBuff[512];
@@ -112,4 +116,5 @@ void StartIMU(void *argument)
     {
         osDelay(100);
     }
+}
 }

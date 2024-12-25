@@ -13,6 +13,7 @@ void Segment::Receive(uint8_t *data, uint32_t len)
             {
                 mBuffer.erase(0, i);
                 mState = 1;
+                break;
             }
         }
         if (mState == 0)
@@ -39,6 +40,7 @@ void Segment::Receive(uint8_t *data, uint32_t len)
                 mBuffer.erase(0, mTrailerBegin + 2);
                 mState = 0;
                 mTrailerBegin = 5;
+                break;
             }
             else
             {

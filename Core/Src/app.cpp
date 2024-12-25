@@ -69,13 +69,16 @@ void StartMain(void *argument)
     uint8_t rtkCOM3RxBuffer[1024];
     size_t rtkCOM3RxBufferLen;
 
+    Segment segment;
+    std::string line;
+
     while (1)
     {
         usbRxBufferLen = xMessageBufferReceive(usbToMain, usbRxBuffer, sizeof(usbRxBuffer), 10);
         if (usbRxBufferLen > 0)
         {
             // parse usbRxBuffer
-            HAL_UART_Transmit_DMA(boardUARTPtr, usbRxBuffer, usbRxBufferLen);
+            segment.Receive(usbRxBuffer, usbRxBufferLen);
         }
         rtkCOM1RxBufferLen = xMessageBufferReceive(rtkCOM1ToMain, rtkCOM1RxBuffer, sizeof(rtkCOM1RxBuffer), 10);
         if (rtkCOM1RxBufferLen > 0)
@@ -88,6 +91,10 @@ void StartMain(void *argument)
         {
             // parse rtkCOM1RxBuffer
             HAL_UART_Transmit_DMA(boardUARTPtr, rtkCOM3RxBuffer, rtkCOM3RxBufferLen);
+        }
+
+        if (segment.GetOne(line))
+        {
         }
 
         osDelay(100);

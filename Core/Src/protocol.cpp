@@ -34,7 +34,7 @@ void Segment::Receive(uint8_t *data, uint32_t len)
                 }
                 if (mBuffer[checksumIndex] == checksum)
                 {
-                    mSegments.push_front(std::string(mBuffer, 2, checksumIndex));
+                    mSegments.push_front(std::string(mBuffer, 2, checksumIndex - 2));
                 }
                 mBuffer.erase(0, mTrailerBegin + 2);
                 mState = 0;

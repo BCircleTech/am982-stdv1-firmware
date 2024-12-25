@@ -51,28 +51,28 @@
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
   .name = "Main",
-  .stack_size = 2048 * 4,
+  .stack_size = 4096 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for RTKCOM1 */
 osThreadId_t RTKCOM1Handle;
 const osThreadAttr_t RTKCOM1_attributes = {
   .name = "RTKCOM1",
-  .stack_size = 2048 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for RTKCOM3 */
 osThreadId_t RTKCOM3Handle;
 const osThreadAttr_t RTKCOM3_attributes = {
   .name = "RTKCOM3",
-  .stack_size = 2048 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for IMU */
 osThreadId_t IMUHandle;
 const osThreadAttr_t IMU_attributes = {
   .name = "IMU",
-  .stack_size = 2048 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 

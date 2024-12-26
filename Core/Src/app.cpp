@@ -87,23 +87,29 @@ void StartMain(void *argument)
 
     while (1)
     {
-        usbRxBufferLen = xMessageBufferReceive(usbToMain, usbRxBuffer, sizeof(usbRxBuffer), 10);
+        usbRxBufferLen = xMessageBufferReceive(usbToMain, usbRxBuffer, sizeof(usbRxBuffer), 0);
         if (usbRxBufferLen > 0)
         {
             // parse usbRxBuffer
             segment.Receive(usbRxBuffer, usbRxBufferLen);
         }
-        rtkCOM1RxBufferLen = xMessageBufferReceive(rtkCOM1ToMain, rtkCOM1RxBuffer, sizeof(rtkCOM1RxBuffer), 10);
+        rtkCOM1RxBufferLen = xMessageBufferReceive(rtkCOM1ToMain, rtkCOM1RxBuffer, sizeof(rtkCOM1RxBuffer), 0);
         if (rtkCOM1RxBufferLen > 0)
         {
             // parse rtkCOM1RxBuffer
-            HAL_UART_Transmit_DMA(boardUARTPtr, rtkCOM1RxBuffer, rtkCOM1RxBufferLen);
+            std::string res;
+            uint8_t cmd[2] = {0x80, 0x00};
+            Segment::Pack(res, cmd, std::string((char *)rtkCOM1RxBuffer, rtkCOM1RxBufferLen));
+            CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
         }
-        rtkCOM3RxBufferLen = xMessageBufferReceive(rtkCOM3ToMain, rtkCOM3RxBuffer, sizeof(rtkCOM3RxBuffer), 10);
+        rtkCOM3RxBufferLen = xMessageBufferReceive(rtkCOM3ToMain, rtkCOM3RxBuffer, sizeof(rtkCOM3RxBuffer), 0);
         if (rtkCOM3RxBufferLen > 0)
         {
-            // parse rtkCOM1RxBuffer
-            HAL_UART_Transmit_DMA(boardUARTPtr, rtkCOM3RxBuffer, rtkCOM3RxBufferLen);
+            // parse rtkCOM3RxBuffer
+            std::string res;
+            uint8_t cmd[2] = {0x80, 0x03};
+            Segment::Pack(res, cmd, std::string((char *)rtkCOM3RxBuffer, rtkCOM3RxBufferLen));
+            CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
         }
 
         if (segment.GetOne(line))
@@ -130,7 +136,7 @@ void StartRTKCOM1(void *argument)
     {
         if (initFlag)
         {
-            mainRxBufferLen = xMessageBufferReceive(mainToRTKCOM1, mainRxBuffer, sizeof(mainRxBuffer), 10);
+            mainRxBufferLen = xMessageBufferReceive(mainToRTKCOM1, mainRxBuffer, sizeof(mainRxBuffer), 0);
             if (mainRxBufferLen > 0)
             {
                 // parse mainRxBuffer
@@ -143,16 +149,34 @@ void StartRTKCOM1(void *argument)
                     if (mainRxBufferLen == 26)
                     {
                         double latitude, longitude, altitude;
-                        //
+                        latitude = *(double *)(mainRxBuffer + 2);
+                        longitude = *(double *)(mainRxBuffer + 10);
+                        altitude = *(double *)(mainRxBuffer + 18);
+                        std::string res;
+                        uint8_t cmd[2] = {0x80, 0x01};
+                        std::string data = {0x00};
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                         SetRTKBaseWithPosition(latitude, longitude, altitude);
-                        //
                     }
                     else if (mainRxBufferLen == 3)
                     {
                         uint8_t seconds;
                         seconds = mainRxBuffer[2];
+                        std::string res;
+                        uint8_t cmd[2] = {0x80, 0x01};
+                        std::string data = {0x00};
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                         SetRTKBaseWithTime(seconds);
-                        //
+                    }
+                    else
+                    {
+                        std::string res;
+                        uint8_t cmd[2] = {0x80, 0x01};
+                        std::string data = {0x01};
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                     }
                 }
                 else if (mainRxBuffer[1] == 0x02)
@@ -161,8 +185,20 @@ void StartRTKCOM1(void *argument)
                     {
                         uint8_t freq;
                         freq = mainRxBuffer[2];
+                        std::string res;
+                        uint8_t cmd[2] = {0x80, 0x02};
+                        std::string data = {0x00};
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                         SetRTKRover(freq);
-                        //
+                    }
+                    else
+                    {
+                        std::string res;
+                        uint8_t cmd[2] = {0x80, 0x02};
+                        std::string data = {0x01};
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                     }
                 }
             }
@@ -188,27 +224,122 @@ void StartIMU(void *argument)
 {
     uint8_t mainRxBuffer[1024];
     size_t mainRxBufferLen;
+
+    float accel[3];
+    float gyro[3];
+
+    // std::string measurements;
+    // std::string accelAndGyro(48);
+    uint16_t delay = 0;
+    uint16_t delayCount = 0;
+
     while (1)
     {
         if (initFlag)
         {
-            mainRxBufferLen = xMessageBufferReceive(mainToIMU, mainRxBuffer, sizeof(mainRxBuffer), 10);
+            mainRxBufferLen = xMessageBufferReceive(mainToIMU, mainRxBuffer, sizeof(mainRxBuffer), 0);
             if (mainRxBufferLen > 0)
             {
                 // parse mainRxBuffer
                 if (mainRxBuffer[1] == 0x00)
                 {
+                    if (mainRxBufferLen == 3)
+                    {
+                        uint8_t value;
+                        ReadIMUReg(mainRxBuffer[2], &value);
+                        std::string res;
+                        uint8_t cmd[2] = {0x81, 0x00};
+                        std::string data = {0x00, 0x00};
+                        data[0] = mainRxBuffer[2];
+                        data[1] = value;
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                    }
                 }
                 else if (mainRxBuffer[1] == 0x01)
                 {
+                    if (mainRxBufferLen == 4)
+                    {
+                        WriteIMUReg(mainRxBuffer[2], mainRxBuffer[3]);
+                        std::string res;
+                        uint8_t cmd[2] = {0x81, 0x01};
+                        std::string data = {0x00};
+                        Segment::Pack(res, cmd, data);
+                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                    }
                 }
                 else if (mainRxBuffer[1] == 0x02)
                 {
+                    bool valid = true;
+                    switch (mainRxBuffer[2])
+                    {
+                    case 1:
+                        delay = 100;
+                        break;
+                    case 5:
+                        delay = 20;
+                        break;
+                    case 10:
+                        delay = 10;
+                        break;
+                    case 50:
+                        delay = 2;
+                        break;
+                    case 100:
+                        delay = 1;
+                        break;
+                    default:
+                        valid = false;
+                        break;
+                    }
+                    std::string res;
+                    uint8_t cmd[2] = {0x81, 0x02};
+                    std::string data = {0x00};
+                    if (!valid)
+                    {
+                        data[0] = 0x01;
+                    }
+                    Segment::Pack(res, cmd, data);
+                    CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                 }
             }
         }
 
-        osDelay(100);
+        if (delayCount == delay)
+        {
+            delayCount = 0;
+            GetIMUAccel(accel);
+            GetIMUGyro(gyro);
+            // for (unsigned int i = 0; i < 8; i++)
+            // {
+            //     accelAndGyro[i] = (accel[0] >> (i * 8)) & 0xff;
+            // }
+            // for (unsigned int i = 0; i < 8; i++)
+            // {
+            //     accelAndGyro[i + 8] = (accel[1] >> (i * 8)) & 0xff;
+            // }
+            // for (unsigned int i = 0; i < 8; i++)
+            // {
+            //     accelAndGyro[i + 16] = (accel[2] >> (i * 8)) & 0xff;
+            // }
+            // for (unsigned int i = 0; i < 8; i++)
+            // {
+            //     accelAndGyro[i + 24] = (gyro[0] >> (i * 8)) & 0xff;
+            // }
+            // for (unsigned int i = 0; i < 8; i++)
+            // {
+            //     accelAndGyro[i + 32] = (gyro[1] >> (i * 8)) & 0xff;
+            // }
+            // for (unsigned int i = 0; i < 8; i++)
+            // {
+            //     accelAndGyro[i + 40] = (gyro[2] >> (i * 8)) & 0xff;
+            // }
+            // Segment::Pack(measurements, 0x8103, accelAndGyro);
+            // CDC_Transmit_HS((uint8_t *)measurements.c_str(), measurements.length());
+        }
+        delayCount++;
+
+        osDelay(10);
     }
 }
 }

@@ -79,8 +79,6 @@ void StartMain(void *argument)
     size_t usbRxBufferLen;
     uint8_t rtkCOM1RxBuffer[1024];
     size_t rtkCOM1RxBufferLen;
-    uint8_t rtkCOM3RxBuffer[1024];
-    size_t rtkCOM3RxBufferLen;
 
     Segment segment;
     std::string line;
@@ -100,15 +98,6 @@ void StartMain(void *argument)
             std::string res;
             uint8_t cmd[2] = {0x80, 0x00};
             Segment::Pack(res, cmd, std::string((char *)rtkCOM1RxBuffer, rtkCOM1RxBufferLen));
-            CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
-        }
-        rtkCOM3RxBufferLen = xMessageBufferReceive(rtkCOM3ToMain, rtkCOM3RxBuffer, sizeof(rtkCOM3RxBuffer), 0);
-        if (rtkCOM3RxBufferLen > 0)
-        {
-            // parse rtkCOM3RxBuffer
-            std::string res;
-            uint8_t cmd[2] = {0x80, 0x03};
-            Segment::Pack(res, cmd, std::string((char *)rtkCOM3RxBuffer, rtkCOM3RxBufferLen));
             CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
         }
 
@@ -210,13 +199,25 @@ void StartRTKCOM1(void *argument)
 
 void StartRTKCOM3(void *argument)
 {
+    uint8_t rtkCOM3RxBuffer[1024];
+    size_t rtkCOM3RxBufferLen;
+
     while (1)
     {
         if (initFlag)
         {
+            rtkCOM3RxBufferLen = xMessageBufferReceive(rtkCOM3ToMain, rtkCOM3RxBuffer, sizeof(rtkCOM3RxBuffer), 0);
+            if (rtkCOM3RxBufferLen > 0)
+            {
+                // parse rtkCOM3RxBuffer
+                std::string res;
+                uint8_t cmd[2] = {0x80, 0x03};
+                Segment::Pack(res, cmd, std::string((char *)rtkCOM3RxBuffer, rtkCOM3RxBufferLen));
+                CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+            }
         }
 
-        osDelay(100);
+        osDelay(10);
     }
 }
 

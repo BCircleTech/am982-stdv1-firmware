@@ -40,13 +40,7 @@ void ResetRTK()
 
 void SetRTKConf(uint8_t *cmd, uint16_t size)
 {
-    uint8_t *tmp = malloc(size + 2);
-    memcpy(tmp, cmd, size);
-    tmp[size] = '\r';
-    tmp[size + 1] = '\n';
-    HAL_UART_Transmit_DMA(rtkCOM1Ptr, tmp, size + 2);
-    osDelay(10);
-    free(tmp);
+    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd, size);
 }
 
 void SetRTKBaseWithPosition(double latitude, double longitude, double altitude)

@@ -1,6 +1,6 @@
 #include "protocol.h"
 
-void Segment::Receive(uint8_t *data, uint32_t len)
+void Segment::Receive(const uint8_t *data, const uint32_t &len)
 {
     mBuffer.append((char *)data, len);
     unsigned int bufferLen = mBuffer.length();
@@ -62,4 +62,24 @@ bool Segment::GetOne(std::string &str)
     {
         return false;
     }
+}
+
+void Segment::Pack(std::string &str, const uint8_t *cmd, const std::string &data)
+{
+    uint8_t checksum;
+    str.resize(data.length() + 7);
+    str[0] = mHeaders[0];
+    str[1] = mHeaders[1];
+    str[2] = cmd[0];
+    str[3] = cmd[1];
+    checksum = str[2] + str[3];
+    unsigned int i = 4;
+    for (const auto &it : data)
+    {
+        str[i++] = it;
+        checksum += it;
+    }
+    str[data.length() + 4] = checksum;
+    str[data.length() + 5] = mTrailers[0];
+    str[data.length() + 6] = mTrailers[1];
 }

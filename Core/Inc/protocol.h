@@ -2,18 +2,21 @@
 #define PROTOCOL_H
 
 #include <cstdint>
-#include <string>
 #include <list>
+#include <string>
 
 class Segment
 {
 public:
-    void Receive(uint8_t *data, uint32_t len);
+    void Receive(const uint8_t *data, const uint32_t &len);
     bool GetOne(std::string &str);
 
+public:
+    static void Pack(std::string &str, const uint8_t *cmd, const std::string &data);
+
 private:
-    const uint8_t mHeaders[2] = {0xac, 0x53};
-    const uint8_t mTrailers[2] = {0x35, 0xca};
+    static constexpr uint8_t mHeaders[2] = {0xac, 0x53};
+    static constexpr uint8_t mTrailers[2] = {0x35, 0xca};
     std::list<std::string> mSegments;
     std::string mBuffer;
     uint8_t mState = 0;

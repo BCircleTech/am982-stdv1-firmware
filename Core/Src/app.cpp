@@ -315,7 +315,6 @@ void StartIMU(void *argument)
             GetIMUGyro(measurements + 3);
             uint8_t cmd[2] = {0x81, 0x03};
             USB_Transmit(cmd, (uint8_t *)measurements, 24);
-            HAL_UART_Transmit_DMA(boardUARTPtr, (uint8_t *)"***", 3);
         }
         delayCount++;
 

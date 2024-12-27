@@ -11,13 +11,11 @@ uint8_t initFlag = 0;
 uint8_t rtkCOM1RxBuff[512];
 uint8_t rtkCOM3RxBuff[512];
 
-// MessageBufferHandle_t mainToUSB;
 MessageBufferHandle_t usbToMain;
 MessageBufferHandle_t mainToRTKCOM1;
 MessageBufferHandle_t rtkCOM1ToMain;
 MessageBufferHandle_t rtkCOM3ToMain;
 MessageBufferHandle_t mainToIMU;
-// MessageBufferHandle_t imuToMain;
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
@@ -51,6 +49,16 @@ void USB_CDC_RxHandler(uint8_t *data, uint32_t size)
     }
 }
 
+void USB_Transmit(uint8_t cmd[2], uint8_t *data, uint32_t len)
+{
+    std::string res;
+    Segment::Pack(res, cmd, std::string((char *)data, len));
+    while (CDC_Transmit_HS((uint8_t *)res.c_str(), res.length()) == USBD_BUSY)
+    {
+        osDelay(1);
+    }
+}
+
 void StartMain(void *argument)
 {
     MX_USB_DEVICE_Init();
@@ -58,13 +66,11 @@ void StartMain(void *argument)
     HAL_UARTEx_ReceiveToIdle_DMA(rtkCOM1Ptr, rtkCOM1RxBuff, sizeof(rtkCOM1RxBuff));
     HAL_UARTEx_ReceiveToIdle_DMA(rtkCOM3Ptr, rtkCOM3RxBuff, sizeof(rtkCOM3RxBuff));
 
-    // mainToUSB = xMessageBufferCreate(1024);
     usbToMain = xMessageBufferCreate(1024);
     mainToRTKCOM1 = xMessageBufferCreate(1024);
     rtkCOM1ToMain = xMessageBufferCreate(1024);
     rtkCOM3ToMain = xMessageBufferCreate(1024);
     mainToIMU = xMessageBufferCreate(1024);
-    // imuToMain = xMessageBufferCreate(1024);
 
     ResetRTK();
     ResetIMU();
@@ -76,9 +82,9 @@ void StartMain(void *argument)
     initFlag = 1;
 
     uint8_t usbRxBuffer[1024];
-    size_t usbRxBufferLen;
+    uint32_t usbRxBufferLen;
     uint8_t rtkCOM1RxBuffer[1024];
-    size_t rtkCOM1RxBufferLen;
+    uint32_t rtkCOM1RxBufferLen;
 
     Segment segment;
     std::string line;
@@ -95,10 +101,8 @@ void StartMain(void *argument)
         if (rtkCOM1RxBufferLen > 0)
         {
             // parse rtkCOM1RxBuffer
-            std::string res;
             uint8_t cmd[2] = {0x80, 0x00};
-            Segment::Pack(res, cmd, std::string((char *)rtkCOM1RxBuffer, rtkCOM1RxBufferLen));
-            CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+            USB_Transmit(cmd, rtkCOM1RxBuffer, rtkCOM1RxBufferLen);
         }
 
         if (segment.GetOne(line))
@@ -120,7 +124,7 @@ void StartMain(void *argument)
 void StartRTKCOM1(void *argument)
 {
     uint8_t mainRxBuffer[1024];
-    size_t mainRxBufferLen;
+    uint32_t mainRxBufferLen;
     while (1)
     {
         if (initFlag)
@@ -141,31 +145,25 @@ void StartRTKCOM1(void *argument)
                         latitude = *(double *)(mainRxBuffer + 2);
                         longitude = *(double *)(mainRxBuffer + 10);
                         altitude = *(double *)(mainRxBuffer + 18);
-                        std::string res;
                         uint8_t cmd[2] = {0x80, 0x01};
-                        std::string data = {0x00};
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        uint8_t data = 0x00;
+                        USB_Transmit(cmd, &data, 1);
                         SetRTKBaseWithPosition(latitude, longitude, altitude);
                     }
                     else if (mainRxBufferLen == 3)
                     {
                         uint8_t seconds;
                         seconds = mainRxBuffer[2];
-                        std::string res;
                         uint8_t cmd[2] = {0x80, 0x01};
-                        std::string data = {0x00};
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        uint8_t data = 0x00;
+                        USB_Transmit(cmd, &data, 1);
                         SetRTKBaseWithTime(seconds);
                     }
                     else
                     {
-                        std::string res;
                         uint8_t cmd[2] = {0x80, 0x01};
-                        std::string data = {0x01};
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        uint8_t data = 0x01;
+                        USB_Transmit(cmd, &data, 1);
                     }
                 }
                 else if (mainRxBuffer[1] == 0x02)
@@ -174,20 +172,16 @@ void StartRTKCOM1(void *argument)
                     {
                         uint8_t freq;
                         freq = mainRxBuffer[2];
-                        std::string res;
                         uint8_t cmd[2] = {0x80, 0x02};
-                        std::string data = {0x00};
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        uint8_t data = 0x00;
+                        USB_Transmit(cmd, &data, 1);
                         SetRTKRover(freq);
                     }
                     else
                     {
-                        std::string res;
                         uint8_t cmd[2] = {0x80, 0x02};
-                        std::string data = {0x01};
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        uint8_t data = 0x01;
+                        USB_Transmit(cmd, &data, 1);
                     }
                 }
             }
@@ -200,7 +194,7 @@ void StartRTKCOM1(void *argument)
 void StartRTKCOM3(void *argument)
 {
     uint8_t rtkCOM3RxBuffer[1024];
-    size_t rtkCOM3RxBufferLen;
+    uint32_t rtkCOM3RxBufferLen;
 
     while (1)
     {
@@ -210,10 +204,8 @@ void StartRTKCOM3(void *argument)
             if (rtkCOM3RxBufferLen > 0)
             {
                 // parse rtkCOM3RxBuffer
-                std::string res;
                 uint8_t cmd[2] = {0x80, 0x03};
-                Segment::Pack(res, cmd, std::string((char *)rtkCOM3RxBuffer, rtkCOM3RxBufferLen));
-                CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                USB_Transmit(cmd, rtkCOM3RxBuffer, rtkCOM3RxBufferLen);
             }
         }
 
@@ -224,15 +216,12 @@ void StartRTKCOM3(void *argument)
 void StartIMU(void *argument)
 {
     uint8_t mainRxBuffer[1024];
-    size_t mainRxBufferLen;
+    uint32_t mainRxBufferLen;
 
-    float accel[3];
-    float gyro[3];
+    float measurements[6];
 
-    // std::string measurements;
-    // std::string accelAndGyro(48);
-    uint16_t delay = 0;
-    uint16_t delayCount = 0;
+    uint32_t delay = 0;
+    uint32_t delayCount = 0;
 
     while (1)
     {
@@ -248,13 +237,11 @@ void StartIMU(void *argument)
                     {
                         uint8_t value;
                         ReadIMUReg(mainRxBuffer[2], &value);
-                        std::string res;
                         uint8_t cmd[2] = {0x81, 0x00};
-                        std::string data = {0x00, 0x00};
+                        uint8_t data[2];
                         data[0] = mainRxBuffer[2];
                         data[1] = value;
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        USB_Transmit(cmd, data, 2);
                     }
                 }
                 else if (mainRxBuffer[1] == 0x01)
@@ -262,81 +249,68 @@ void StartIMU(void *argument)
                     if (mainRxBufferLen == 4)
                     {
                         WriteIMUReg(mainRxBuffer[2], mainRxBuffer[3]);
-                        std::string res;
                         uint8_t cmd[2] = {0x81, 0x01};
-                        std::string data = {0x00};
-                        Segment::Pack(res, cmd, data);
-                        CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
+                        uint8_t data = 0x00;
+                        USB_Transmit(cmd, &data, 1);
+                    }
+                    else
+                    {
+                        uint8_t cmd[2] = {0x81, 0x01};
+                        uint8_t data = 0x01;
+                        USB_Transmit(cmd, &data, 1);
                     }
                 }
                 else if (mainRxBuffer[1] == 0x02)
                 {
-                    bool valid = true;
-                    switch (mainRxBuffer[2])
+                    if (mainRxBufferLen == 3)
                     {
-                    case 1:
-                        delay = 100;
-                        break;
-                    case 5:
-                        delay = 20;
-                        break;
-                    case 10:
-                        delay = 10;
-                        break;
-                    case 50:
-                        delay = 2;
-                        break;
-                    case 100:
-                        delay = 1;
-                        break;
-                    default:
-                        valid = false;
-                        break;
+                        bool valid = true;
+                        switch (mainRxBuffer[2])
+                        {
+                        case 1:
+                            delay = 100;
+                            break;
+                        case 5:
+                            delay = 20;
+                            break;
+                        case 10:
+                            delay = 10;
+                            break;
+                        case 50:
+                            delay = 2;
+                            break;
+                        case 100:
+                            delay = 1;
+                            break;
+                        default:
+                            valid = false;
+                            break;
+                        }
+                        uint8_t cmd[2] = {0x81, 0x02};
+                        uint8_t data = 0x00;
+                        if (!valid)
+                        {
+                            data = 0x01;
+                        }
+                        USB_Transmit(cmd, &data, 1);
                     }
-                    std::string res;
-                    uint8_t cmd[2] = {0x81, 0x02};
-                    std::string data = {0x00};
-                    if (!valid)
+                    else
                     {
-                        data[0] = 0x01;
+                        uint8_t cmd[2] = {0x81, 0x02};
+                        uint8_t data = 0x01;
+                        USB_Transmit(cmd, &data, 1);
                     }
-                    Segment::Pack(res, cmd, data);
-                    CDC_Transmit_HS((uint8_t *)res.c_str(), res.length());
                 }
             }
         }
 
-        if (delayCount == delay)
+        if (delayCount >= delay)
         {
             delayCount = 0;
-            GetIMUAccel(accel);
-            GetIMUGyro(gyro);
-            // for (unsigned int i = 0; i < 8; i++)
-            // {
-            //     accelAndGyro[i] = (accel[0] >> (i * 8)) & 0xff;
-            // }
-            // for (unsigned int i = 0; i < 8; i++)
-            // {
-            //     accelAndGyro[i + 8] = (accel[1] >> (i * 8)) & 0xff;
-            // }
-            // for (unsigned int i = 0; i < 8; i++)
-            // {
-            //     accelAndGyro[i + 16] = (accel[2] >> (i * 8)) & 0xff;
-            // }
-            // for (unsigned int i = 0; i < 8; i++)
-            // {
-            //     accelAndGyro[i + 24] = (gyro[0] >> (i * 8)) & 0xff;
-            // }
-            // for (unsigned int i = 0; i < 8; i++)
-            // {
-            //     accelAndGyro[i + 32] = (gyro[1] >> (i * 8)) & 0xff;
-            // }
-            // for (unsigned int i = 0; i < 8; i++)
-            // {
-            //     accelAndGyro[i + 40] = (gyro[2] >> (i * 8)) & 0xff;
-            // }
-            // Segment::Pack(measurements, 0x8103, accelAndGyro);
-            // CDC_Transmit_HS((uint8_t *)measurements.c_str(), measurements.length());
+            GetIMUAccel(measurements);
+            GetIMUGyro(measurements + 3);
+            uint8_t cmd[2] = {0x81, 0x03};
+            USB_Transmit(cmd, (uint8_t *)measurements, 24);
         }
         delayCount++;
 

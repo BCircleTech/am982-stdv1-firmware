@@ -38,7 +38,7 @@ void ResetRTK()
     HAL_GPIO_WritePin(RTK_NRST_GPIO_Port, RTK_NRST_Pin, GPIO_PIN_SET);
 }
 
-void SetRTKConf(uint8_t *cmd, uint16_t size)
+void SetRTKConf(uint8_t *cmd, uint32_t size)
 {
     HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd, size);
 }
@@ -202,7 +202,7 @@ void WriteIMUReg(uint8_t addr, uint8_t data)
     free(tmp);
 }
 
-void WriteIMURegBits(uint8_t addr, uint16_t start, uint16_t len, uint8_t data)
+void WriteIMURegBits(uint8_t addr, uint32_t start, uint32_t len, uint8_t data)
 {
     uint8_t tmp, mask;
     ReadIMUReg(addr, &tmp);

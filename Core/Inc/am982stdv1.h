@@ -5,16 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "main.h"
 #include "cmsis_os.h"
 #include "dma.h"
 #include "fdcan.h"
+#include "gpio.h"
 #include "i2c.h"
+#include "main.h"
 #include "memorymap.h"
 #include "rtc.h"
 #include "usart.h"
 #include "usb_device.h"
-#include "gpio.h"
 
 #define IMU_I2C_ADDR 0xd0
 #define IMU_I2C_TIMEOUT 10
@@ -378,7 +378,7 @@ void LedErrOn();
 void LedErrOff();
 
 void ResetRTK();
-void SetRTKConf(uint8_t *cmd, uint16_t size);
+void SetRTKConf(uint8_t *cmd, uint32_t size);
 void SetRTKBaseWithPosition(double latitude, double longitude, double altitude);
 void SetRTKBaseWithTime(unsigned int seconds);
 void SetRTKRover(unsigned int freq);
@@ -386,7 +386,7 @@ void SetRTKRover(unsigned int freq);
 void ResetIMU();
 void ReadIMUReg(uint8_t addr, uint8_t *data);
 void WriteIMUReg(uint8_t addr, uint8_t data);
-void WriteIMURegBits(uint8_t addr, uint16_t start, uint16_t len, uint8_t data);
+void WriteIMURegBits(uint8_t addr, uint32_t start, uint32_t len, uint8_t data);
 void InitIMU(uint8_t clkSource, uint8_t accelRange, uint8_t gyroRange);
 void SetIMUDigitalLowPassFilter(uint8_t bandwidth);
 void SetIMUSampleRate(unsigned int rate);

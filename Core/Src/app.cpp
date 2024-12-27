@@ -53,8 +53,12 @@ void USB_Transmit(uint8_t cmd[2], uint8_t *data, uint32_t len)
 {
     std::string res;
     Segment::Pack(res, cmd, std::string((char *)data, len));
-    while (CDC_Transmit_HS((uint8_t *)res.c_str(), res.length()) == USBD_BUSY)
+    for (unsigned int i = 0; i < 5; i++)
     {
+        if (CDC_Transmit_HS((uint8_t *)res.c_str(), res.length()) == USBD_OK)
+        {
+            break;
+        }
         osDelay(1);
     }
 }
@@ -311,6 +315,7 @@ void StartIMU(void *argument)
             GetIMUGyro(measurements + 3);
             uint8_t cmd[2] = {0x81, 0x03};
             USB_Transmit(cmd, (uint8_t *)measurements, 24);
+            HAL_UART_Transmit_DMA(boardUARTPtr, (uint8_t *)"***", 3);
         }
         delayCount++;
 

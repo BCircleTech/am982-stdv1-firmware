@@ -39,7 +39,7 @@ The structure of a complete frame transmitted between the host and the module is
 |81 00|XX YY|Return data **YY** in the register **XX** of the MPU6050.|
 |81 01|XX|**XX** is 00 for success, and 01 for failure.|
 |81 02|XX|**XX** is 00 for success, and 01 for failure.|
-|81 03|ACX ACY ACZ AVX AVY AVZ|Return the accelerations and angular velocities measured by the MPU6050. **ACX**, **ACY**, and **ACZ** represent the accelerations along the X-axis, Y-axis, and Z-axis, respectively. **AVX**, **AVY**, and **AVZ** represent the angular velocities along the X-axis, Y-axis, and Z-axis, respectively. Each value of acceleration and angular velocity is a double, with 8 bytes.|
+|81 03|ACX ACY ACZ GRX GRY GRZ|Return the accelerations and angular velocities measured by the MPU6050. **ACX**, **ACY**, and **ACZ** represent the accelerations along the X-axis, Y-axis, and Z-axis, respectively. **GRX**, **GRY**, and **GRZ** represent the angular velocities along the X-axis, Y-axis, and Z-axis, respectively. Each value of acceleration and angular velocity is a float, with 4 bytes.|
 
 ### Protocol Summary
 

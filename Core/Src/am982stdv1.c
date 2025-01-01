@@ -10,6 +10,8 @@ float imuGyroSensitivity = 0;
 float gravity = 9.80665;
 unsigned int imuAccelFs = 1000;
 unsigned int imuGyroFs = 1000;
+uint8_t rtkMode;
+uint8_t rtkModeFlag = 0;
 
 void LedRunOn()
 {
@@ -41,6 +43,11 @@ void ResetRTK()
 void SetRTKConf(uint8_t *cmd, uint32_t size)
 {
     HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd, size);
+}
+
+void SetRTKBaseData(uint8_t *data, uint32_t size)
+{
+    HAL_UART_Transmit_DMA(rtkCOM3Ptr, data, size);
 }
 
 void SetRTKBaseWithPosition(double latitude, double longitude, double altitude)
@@ -178,6 +185,60 @@ void SetRTKRover(unsigned int freq)
     osDelay(100);
     HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd_4, sizeof(cmd_4) - 1);
     osDelay(100);
+}
+
+void GetRTKMode(uint8_t *mode)
+{
+    uint8_t cmd[] = "mode\r\n";
+    rtkModeFlag = 1;
+    HAL_UART_Transmit_DMA(rtkCOM1Ptr, cmd, sizeof(cmd) - 1);
+    osDelay(100);
+    while (rtkModeFlag)
+    {
+        osDelay(1);
+    }
+    *mode = rtkMode;
+}
+
+void GetRTKPPS(uint8_t *pps)
+{
+    *pps = HAL_GPIO_ReadPin(RTK_PPS_GPIO_Port, RTK_PPS_Pin);
+}
+
+void RTKModeCallback(uint8_t *data, uint32_t size)
+{
+    if (rtkModeFlag == 1)
+    {
+        uint32_t loop = size - 9;
+        for (uint32_t i = 0; i < loop; i++)
+        {
+            if (data[i] == 'M' &&
+                data[i + 1] == 'O' &&
+                data[i + 2] == 'D' &&
+                data[i + 3] == 'E' &&
+                data[i + 4] == ' ')
+            {
+                if (data[i + 5] == 'B' &&
+                    data[i + 6] == 'A' &&
+                    data[i + 7] == 'S' &&
+                    data[i + 8] == 'E')
+                {
+                    rtkMode = RTK_MODE_BASE;
+                    break;
+                }
+                if (data[i + 5] == 'R' &&
+                    data[i + 6] == 'O' &&
+                    data[i + 7] == 'V' &&
+                    data[i + 8] == 'E' &&
+                    data[i + 9] == 'R')
+                {
+                    rtkMode = RTK_MODE_ROVER;
+                    break;
+                }
+            }
+        }
+        rtkModeFlag = 0;
+    }
 }
 
 void ResetIMU()

@@ -367,6 +367,9 @@
 #define MPU6050_DMP_MEMORY_CHUNK_SIZE 16
 #define MPU6050_FIFO_DEFAULT_TIMEOUT 11000
 
+#define RTK_MODE_BASE 0
+#define RTK_MODE_ROVER 1
+
 extern UART_HandleTypeDef *rtkCOM1Ptr;
 extern UART_HandleTypeDef *rtkCOM3Ptr;
 extern UART_HandleTypeDef *boardUARTPtr;
@@ -379,9 +382,13 @@ void LedErrOff();
 
 void ResetRTK();
 void SetRTKConf(uint8_t *cmd, uint32_t size);
+void SetRTKBaseData(uint8_t *data, uint32_t size);
 void SetRTKBaseWithPosition(double latitude, double longitude, double altitude);
 void SetRTKBaseWithTime(unsigned int seconds);
 void SetRTKRover(unsigned int freq);
+void GetRTKMode(uint8_t *mode);
+void GetRTKPPS(uint8_t *pps);
+void RTKModeCallback(uint8_t *data, uint32_t size);
 
 void ResetIMU();
 void ReadIMUReg(uint8_t addr, uint8_t *data);

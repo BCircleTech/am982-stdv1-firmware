@@ -7,6 +7,7 @@ extern "C"
 #include "usbd_cdc_if.h"
 
 uint8_t initFlag = 0;
+uint8_t rtkModeValue = 0;
 
 uint8_t rtkCOM1RxBuff[512];
 uint8_t rtkCOM3RxBuff[512];
@@ -22,6 +23,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (huart->Instance == rtkCOM1Ptr->Instance)
     {
+        RTKModeCallback(rtkCOM1RxBuff, size);
         if (initFlag)
         {
             xMessageBufferSendFromISR(rtkCOM1ToMain, rtkCOM1RxBuff, size, &xHigherPriorityTaskWoken);
@@ -82,6 +84,7 @@ void StartMain(void *argument)
     InitIMU(MPU6050_CLOCK_PLL_XGYRO, MPU6050_ACCEL_FS_2, MPU6050_GYRO_FS_250);
     SetIMUDigitalLowPassFilter(MPU6050_DLPF_BW_5);
     SetIMUSampleRate(100);
+    GetRTKMode(&rtkModeValue);
 
     initFlag = 1;
 
@@ -129,6 +132,7 @@ void StartRTKCOM1(void *argument)
 {
     uint8_t mainRxBuffer[1024];
     uint32_t mainRxBufferLen;
+
     while (1)
     {
         if (initFlag)
@@ -153,6 +157,7 @@ void StartRTKCOM1(void *argument)
                         uint8_t data = 0x00;
                         USB_Transmit(cmd, &data, 1);
                         SetRTKBaseWithPosition(latitude, longitude, altitude);
+                        GetRTKMode(&rtkModeValue);
                     }
                     else if (mainRxBufferLen == 3)
                     {
@@ -162,6 +167,7 @@ void StartRTKCOM1(void *argument)
                         uint8_t data = 0x00;
                         USB_Transmit(cmd, &data, 1);
                         SetRTKBaseWithTime(seconds);
+                        GetRTKMode(&rtkModeValue);
                     }
                     else
                     {
@@ -180,6 +186,7 @@ void StartRTKCOM1(void *argument)
                         uint8_t data = 0x00;
                         USB_Transmit(cmd, &data, 1);
                         SetRTKRover(freq);
+                        GetRTKMode(&rtkModeValue);
                     }
                     else
                     {
@@ -223,6 +230,7 @@ void StartIMU(void *argument)
     uint32_t mainRxBufferLen;
 
     float measurements[6];
+    uint8_t pps;
 
     uint32_t delay = 0;
     uint32_t delayCount = 0;
@@ -317,6 +325,16 @@ void StartIMU(void *argument)
             USB_Transmit(cmd, (uint8_t *)measurements, 24);
         }
         delayCount++;
+
+        GetRTKPPS(&pps);
+        if (pps)
+        {
+            LedRunOff();
+        }
+        else
+        {
+            LedRunOn();
+        }
 
         osDelay(10);
     }

@@ -48,18 +48,24 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (huart->Instance == rtkCOM1Ptr->Instance)
     {
-        RTKModeCallback(rtkCOM1RxBuff, size);
-        if (initFlag)
+        if (HAL_UARTEx_GetRxEventType(huart) != HAL_UART_RXEVENT_HT)
         {
-            xMessageBufferSendFromISR(rtkCOM1ToMain, rtkCOM1RxBuff, size, &xHigherPriorityTaskWoken);
+            RTKModeCallback(rtkCOM1RxBuff, size);
+            if (initFlag)
+            {
+                xMessageBufferSendFromISR(rtkCOM1ToMain, rtkCOM1RxBuff, size, &xHigherPriorityTaskWoken);
+            }
         }
         HAL_UARTEx_ReceiveToIdle_DMA(rtkCOM1Ptr, rtkCOM1RxBuff, sizeof(rtkCOM1RxBuff));
     }
     else if (huart->Instance == rtkCOM3Ptr->Instance)
     {
-        if (initFlag)
+        if (HAL_UARTEx_GetRxEventType(huart) != HAL_UART_RXEVENT_HT)
         {
-            xMessageBufferSendFromISR(rtkCOM3ToMain, rtkCOM3RxBuff, size, &xHigherPriorityTaskWoken);
+            if (initFlag)
+            {
+                xMessageBufferSendFromISR(rtkCOM3ToMain, rtkCOM3RxBuff, size, &xHigherPriorityTaskWoken);
+            }
         }
         HAL_UARTEx_ReceiveToIdle_DMA(rtkCOM3Ptr, rtkCOM3RxBuff, sizeof(rtkCOM3RxBuff));
     }

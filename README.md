@@ -27,6 +27,7 @@ The structure of a complete frame transmitted between the host and the module is
 |01 00|XX|Read data from the register **XX** of the MPU6050.|
 |01 01|XX YY|Write data **YY** to the register **XX** of the MPU6050.|
 |01 02|XX|Set the frequency unsigned integer **XX** of the IMU data. Options are 1Hz, 5Hz, 10Hz, 50Hz, 100Hz.|
+|01 04|ka ba kg bg|Set the IMU calibration parameters. **ka** and **kg** are 3-by-3 matrices. **ba** and **bg** are 3-by-1 vectors. Each element is float with 4 bytes. See the following chapter for more information.|
 |03 00|Latitude Longitude Altitude|Enable ENU coordinates output. The types of origin position **Latitude**, **Longitude**, and **Altitude** are doubles, each with 8 bytes.|
 |03 01||Disable ENU coordinates output.|
 
@@ -42,6 +43,7 @@ The structure of a complete frame transmitted between the host and the module is
 |81 01|XX|**XX** is 00 for success, and 01 for failure.|
 |81 02|XX|**XX** is 00 for success, and 01 for failure.|
 |81 03|ACX ACY ACZ GRX GRY GRZ|Return the accelerations and angular velocities measured by the MPU6050. **ACX**, **ACY**, and **ACZ** represent the accelerations along the X-axis, Y-axis, and Z-axis, respectively. **GRX**, **GRY**, and **GRZ** represent the angular velocities along the X-axis, Y-axis, and Z-axis, respectively. Each value of acceleration and angular velocity is a float, with 4 bytes.|
+|81 04|XX|**XX** is 00 for success, and 01 for failure.|
 |83 00|XX|**XX** is 00 for success, and 01 for failure.|
 |83 01|XX|**XX** is 00 for success, and 01 for failure.|
 |83 02|**X** **Y** **Z**|Return the ENU coordinates. The types of coordinates **X**, **Y**, and **Z** are doubles, each with 8 bytes.|
@@ -58,6 +60,7 @@ The structure of a complete frame transmitted between the host and the module is
 |01 01|81 01|Write data to the register of the MPU6050.|
 |01 02|81 02|Set the frequency of the IMU data.|
 ||81 03|Receive measurements from the IMU.|
+|01 04|81 04|Set the IMU calibration parameters.|
 |03 00|83 00|Enable ENU coordinates output.|
 |03 01|83 01|Disable ENU coordinates output.|
 ||83 02|Receive the ENU coordinates output.|
@@ -132,4 +135,18 @@ WriteIMUReg(MPU6050_RA_CONFIG, 0x06);
 WriteIMUReg(MPU6050_RA_SMPLRT_DIV, 0x09);
 /* Init IMU */
 WriteIMUReg(MPU6050_RA_PWR_MGMT_1, 0x01);
+```
+
+## IMU Calibration
+
+```c
+// Calibrate accelerometer‌ measurements
+acc[0] = ka[0][0] * accRaw[0] + ka[0][1] * accRaw[1] + ka[0][2] * accRaw[2] + ba[0];
+acc[1] = ka[1][0] * accRaw[0] + ka[1][1] * accRaw[1] + ka[1][2] * accRaw[2] + ba[1];
+acc[2] = ka[2][0] * accRaw[0] + ka[2][1] * accRaw[1] + ka[2][2] * accRaw[2] + ba[2];
+
+// Calibrate gyroscope measurements
+gyro[0] = kg[0][0] * gyroRaw[0] + kg[0][1] * gyroRaw[1] + kg[0][2] * gyroRaw[2] + bg[0];
+gyro[1] = kg[1][0] * gyroRaw[0] + kg[1][1] * gyroRaw[1] + kg[1][2] * gyroRaw[2] + bg[1];
+gyro[2] = kg[2][0] * gyroRaw[0] + kg[2][1] * gyroRaw[1] + kg[2][2] * gyroRaw[2] + bg[2];
 ```

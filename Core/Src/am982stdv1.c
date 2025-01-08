@@ -13,6 +13,32 @@ unsigned int imuGyroFs = 1000;
 uint8_t rtkMode;
 uint8_t rtkModeFlag = 0;
 
+void ReadFlashPara(uint32_t addr, uint32_t size, uint8_t *para)
+{
+    memcpy(para, (uint8_t *)(PARA_FLASH_ADDR + (volatile uint32_t)addr), size);
+}
+
+void WriteFlashPara(uint32_t addr, uint32_t size, uint8_t *para)
+{
+    uint8_t data[PARA_FLASH_SIZE];
+    memcpy(data, (uint8_t *)(PARA_FLASH_ADDR), PARA_FLASH_SIZE);
+    memcpy(data + addr, para, size);
+
+    HAL_FLASH_Unlock();
+    uint32_t eraseErro;
+    FLASH_EraseInitTypeDef erase;
+    erase.TypeErase = FLASH_TYPEERASE_SECTORS;
+    erase.Sector = PARA_FLASH_SECTOR;
+    erase.NbSectors = 1;
+    erase.VoltageRange = FLASH_VOLTAGE_RANGE_4;
+    HAL_FLASHEx_Erase(&erase, &eraseErro);
+    for (uint32_t i = 0; i < PARA_FLASH_SIZE; i += 32)
+    {
+        HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, PARA_FLASH_ADDR + (volatile uint32_t)i, (uint32_t)(data + i));
+    }
+    HAL_FLASH_Lock();
+}
+
 void LedRunOn()
 {
     HAL_GPIO_WritePin(LED_RUN_GPIO_Port, LED_RUN_Pin, GPIO_PIN_SET);
@@ -422,4 +448,12 @@ void GetIMUTemp(float *temp)
     ReadIMUReg(MPU6050_RA_TEMP_OUT_H, &th);
     t = th << 8 | tl;
     *temp = (t - 521) / 340.0 + 36.53;
+}
+
+void SetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3])
+{
+}
+
+void GetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3])
+{
 }

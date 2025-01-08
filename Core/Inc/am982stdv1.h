@@ -370,6 +370,12 @@
 #define RTK_MODE_BASE 0
 #define RTK_MODE_ROVER 1
 
+#define PARA_FLASH_ADDR 0x080E0000
+#define PARA_FLASH_SIZE 96 // n*32
+#define PARA_FLASH_SECTOR FLASH_SECTOR_7
+#define PARA_IMU_CALI 0
+#define PARA_IMU_CALI_SIZE 96
+
 extern UART_HandleTypeDef *rtkCOM1Ptr;
 extern UART_HandleTypeDef *rtkCOM3Ptr;
 extern UART_HandleTypeDef *boardUARTPtr;
@@ -400,5 +406,7 @@ void SetIMUSampleRate(unsigned int rate);
 void GetIMUAccel(float accel[3]);
 void GetIMUGyro(float gyro[3]);
 void GetIMUTemp(float *temp);
+void SetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3]);
+void GetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3]);
 
 #endif

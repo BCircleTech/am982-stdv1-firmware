@@ -452,8 +452,20 @@ void GetIMUTemp(float *temp)
 
 void SetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3])
 {
+    uint8_t para[PARA_IMU_CALI_SIZE];
+    memcpy(para, ka, 9 * sizeof(float));
+    memcpy(para + 9 * sizeof(float), ba, 3 * sizeof(float));
+    memcpy(para + 12 * sizeof(float), kg, 9 * sizeof(float));
+    memcpy(para + 21 * sizeof(float), bg, 3 * sizeof(float));
+    WriteFlashPara(PARA_IMU_CALI, PARA_IMU_CALI_SIZE, para);
 }
 
 void GetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3])
 {
+    uint8_t para[PARA_IMU_CALI_SIZE];
+    ReadFlashPara(PARA_IMU_CALI, PARA_IMU_CALI_SIZE, para);
+    memcpy(ka, para, 9 * sizeof(float));
+    memcpy(ba, para + 9 * sizeof(float), 3 * sizeof(float));
+    memcpy(kg, para + 12 * sizeof(float), 9 * sizeof(float));
+    memcpy(bg, para + 21 * sizeof(float), 3 * sizeof(float));
 }

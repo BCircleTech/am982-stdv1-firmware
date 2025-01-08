@@ -16,6 +16,7 @@ extern "C"
 #define CMD_01_00 (uint8_t *)"\x01\x00"
 #define CMD_01_01 (uint8_t *)"\x01\x01"
 #define CMD_01_02 (uint8_t *)"\x01\x02"
+#define CMD_01_04 (uint8_t *)"\x01\x04"
 #define CMD_03_00 (uint8_t *)"\x03\x00"
 #define CMD_03_01 (uint8_t *)"\x03\x01"
 #define CMD_80_00 (uint8_t *)"\x80\x00"
@@ -26,6 +27,7 @@ extern "C"
 #define CMD_81_01 (uint8_t *)"\x81\x01"
 #define CMD_81_02 (uint8_t *)"\x81\x02"
 #define CMD_81_03 (uint8_t *)"\x81\x03"
+#define CMD_81_04 (uint8_t *)"\x81\x04"
 #define CMD_83_00 (uint8_t *)"\x83\x00"
 #define CMD_83_01 (uint8_t *)"\x83\x01"
 #define CMD_83_02 (uint8_t *)"\x83\x02"
@@ -423,6 +425,29 @@ void StartIMU(void *argument)
                     {
                         uint8_t data = 0x01;
                         USB_Transmit(CMD_81_02, &data, 1);
+                    }
+                }
+                else if (mainRxBuffer[1] == 0x04)
+                {
+                    if (mainRxBufferLen == 98)
+                    {
+                        float ka[3][3];
+                        float ba[3];
+                        float kg[3][3];
+                        float bg[3];
+                        memcpy(ka, mainRxBuffer + 2, 9 * sizeof(float));
+                        memcpy(ba, mainRxBuffer + 9 * sizeof(float) + 2, 3 * sizeof(float));
+                        memcpy(kg, mainRxBuffer + 12 * sizeof(float) + 2, 9 * sizeof(float));
+                        memcpy(bg, mainRxBuffer + 21 * sizeof(float) + 2, 3 * sizeof(float));
+                        SetIMUCaliPara(ka, ba, kg, bg);
+                        imuCali.Set(ka, ba, kg, bg);
+                        uint8_t data = 0x00;
+                        USB_Transmit(CMD_81_04, &data, 1);
+                    }
+                    else
+                    {
+                        uint8_t data = 0x01;
+                        USB_Transmit(CMD_81_04, &data, 1);
                     }
                 }
             }

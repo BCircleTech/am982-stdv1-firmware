@@ -1,4 +1,5 @@
 #include <string>
+#include "imu-cali.h"
 #include "protocol.h"
 
 extern "C"
@@ -32,6 +33,7 @@ extern "C"
 uint8_t initFlag = 0;
 uint8_t rtkModeValue = 0;
 ENU *enu = nullptr;
+IMUCali imuCali;
 
 uint8_t rtkCOM1RxBuff[512];
 uint8_t rtkCOM3RxBuff[512];
@@ -118,6 +120,13 @@ void StartMain(void *argument)
     SetIMUSampleRate(100);
     GetRTKMode(&rtkModeValue);
     osDelay(2000);
+
+    float ka[3][3];
+    float ba[3];
+    float kg[3][3];
+    float bg[3];
+    GetIMUCaliPara(ka, ba, kg, bg);
+    imuCali.Set(ka, ba, kg, bg);
 
     initFlag = 1;
 
@@ -424,6 +433,7 @@ void StartIMU(void *argument)
             delayCount = 0;
             GetIMUAccel(measurements);
             GetIMUGyro(measurements + 3);
+            imuCali.Cali(measurements);
             if (rtkModeValue)
             {
                 USB_Transmit(CMD_81_03, (uint8_t *)measurements, 24);

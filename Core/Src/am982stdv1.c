@@ -28,6 +28,7 @@ void WriteFlashPara(uint32_t addr, uint32_t size, uint8_t *para)
     uint32_t eraseErro;
     FLASH_EraseInitTypeDef erase;
     erase.TypeErase = FLASH_TYPEERASE_SECTORS;
+    erase.Banks = FLASH_BANK_1;
     erase.Sector = PARA_FLASH_SECTOR;
     erase.NbSectors = 1;
     erase.VoltageRange = FLASH_VOLTAGE_RANGE_4;
@@ -468,4 +469,14 @@ void GetIMUCaliPara(float ka[3][3], float ba[3], float kg[3][3], float bg[3])
     memcpy(ba, para + 9 * sizeof(float), 3 * sizeof(float));
     memcpy(kg, para + 12 * sizeof(float), 9 * sizeof(float));
     memcpy(bg, para + 21 * sizeof(float), 3 * sizeof(float));
+}
+
+void SetIMUFreqPara(uint8_t freq)
+{
+    WriteFlashPara(PARA_IMU_FREQ, PARA_IMU_FREQ_SIZE, &freq);
+}
+
+void GetIMUFreqPara(uint8_t *freq)
+{
+    ReadFlashPara(PARA_IMU_FREQ, PARA_IMU_FREQ_SIZE, freq);
 }

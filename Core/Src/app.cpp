@@ -34,6 +34,7 @@ extern "C"
 
 uint8_t initFlag = 0;
 uint8_t rtkModeValue = 0;
+uint8_t imuDelay;
 ENU *enu = nullptr;
 IMUCali imuCali;
 
@@ -104,6 +105,15 @@ void StartMain(void *argument)
 {
     MX_USB_DEVICE_Init();
 
+    float ka[3][3];
+    float ba[3];
+    float kg[3][3];
+    float bg[3];
+    GetIMUCaliPara(ka, ba, kg, bg);
+    imuCali.Set(ka, ba, kg, bg);
+
+    GetIMUFreqPara(&imuDelay);
+
     HAL_UARTEx_ReceiveToIdle_DMA(rtkCOM1Ptr, rtkCOM1RxBuff, sizeof(rtkCOM1RxBuff));
     HAL_UARTEx_ReceiveToIdle_DMA(rtkCOM3Ptr, rtkCOM3RxBuff, sizeof(rtkCOM3RxBuff));
 
@@ -122,13 +132,6 @@ void StartMain(void *argument)
     SetIMUSampleRate(100);
     GetRTKMode(&rtkModeValue);
     osDelay(2000);
-
-    float ka[3][3];
-    float ba[3];
-    float kg[3][3];
-    float bg[3];
-    GetIMUCaliPara(ka, ba, kg, bg);
-    imuCali.Set(ka, ba, kg, bg);
 
     initFlag = 1;
 
@@ -351,7 +354,6 @@ void StartIMU(void *argument)
     float measurements[6];
     uint8_t pps;
 
-    uint32_t delay = 0;
     uint32_t delayCount = 0;
 
     while (1)
@@ -396,19 +398,24 @@ void StartIMU(void *argument)
                         switch (mainRxBuffer[2])
                         {
                         case 1:
-                            delay = 100;
+                            imuDelay = 100;
+                            SetIMUFreqPara(imuDelay);
                             break;
                         case 5:
-                            delay = 20;
+                            imuDelay = 20;
+                            SetIMUFreqPara(imuDelay);
                             break;
                         case 10:
-                            delay = 10;
+                            imuDelay = 10;
+                            SetIMUFreqPara(imuDelay);
                             break;
                         case 50:
-                            delay = 2;
+                            imuDelay = 2;
+                            SetIMUFreqPara(imuDelay);
                             break;
                         case 100:
-                            delay = 1;
+                            imuDelay = 1;
+                            SetIMUFreqPara(imuDelay);
                             break;
                         default:
                             valid = false;
@@ -451,20 +458,20 @@ void StartIMU(void *argument)
                     }
                 }
             }
-        }
 
-        if (delayCount >= delay)
-        {
-            delayCount = 0;
-            GetIMUAccel(measurements);
-            GetIMUGyro(measurements + 3);
-            imuCali.Cali(measurements);
-            if (rtkModeValue)
+            if (delayCount >= imuDelay)
             {
-                USB_Transmit(CMD_81_03, (uint8_t *)measurements, 24);
+                delayCount = 0;
+                GetIMUAccel(measurements);
+                GetIMUGyro(measurements + 3);
+                imuCali.Cali(measurements);
+                if (rtkModeValue)
+                {
+                    USB_Transmit(CMD_81_03, (uint8_t *)measurements, 24);
+                }
             }
+            delayCount++;
         }
-        delayCount++;
 
         GetRTKPPS(&pps);
         if (pps)
